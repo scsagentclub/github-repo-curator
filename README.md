@@ -20,9 +20,41 @@
 
 > 支持按需创建新分类，目录名使用英文 kebab-case。
 
+## 安装
+
+### 方式一：自然语言（推荐）
+
+直接告诉你的 AI 助手：
+
+> "帮我安装 github-repo-curator 技能，仓库地址是 https://github.com/scsagentclub/github-repo-curator"
+
+AI 助手会自动下载并加载该技能。
+
+### 方式二：终端命令
+
+将本技能克隆或复制到你的 AI 助手 skills 目录：
+
+```bash
+# 用户级安装（推荐）
+git clone https://github.com/scsagentclub/github-repo-curator.git ~/.config/agents/skills/github-repo-curator
+
+# 或项目级安装
+git clone https://github.com/scsagentclub/github-repo-curator.git ./skills/github-repo-curator
+
+# 或手动复制
+mkdir -p ~/.config/agents/skills/github-repo-curator
+cp SKILL.md ~/.config/agents/skills/github-repo-curator/SKILL.md
+```
+
+常见 skills 目录路径：
+- `~/.config/agents/skills/`
+- `~/.kimi/skills/`
+- `~/.claude/skills/`
+- `./skills/`（项目级）
+
 ## 使用方法
 
-1. 安装本技能到你的 AI 助手 skills 目录
+1. 安装并加载本技能
 2. 发送任意 GitHub 项目链接，助手会自动解析
 3. 回复"入库"，项目摘要即自动保存并同步到远端
 
