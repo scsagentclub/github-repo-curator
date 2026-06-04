@@ -1,9 +1,9 @@
 ---
 name: github-repo-curator
 description: >
-  解析 GitHub 项目地址并生成项目摘要，在用户要求"入库"时将项目分类保存到本地 Markdown 知识库。
-  使用场景：(1) 用户发送 GitHub URL 请求分析项目，(2) 用户说"入库"/"保存到知识库"/"归档"要求保存已分析的项目，
-  (3) 批量处理多个 GitHub 项目并归档。自动分类为：硬件开发、一人公司、agent 开发、好用工具，或按需创建新分类。
+  解析 GitHub 项目地址并生成项目摘要，在用户要求"入库"时将项目分类保存到本地 Markdown 知识库，并自动同步推送到远端 GitHub 仓库。
+  使用场景：(1) 用户发送 GitHub URL 请求分析项目，(2) 用户说"入库"/"保存到知识库"/"归档"要求保存并自动同步已分析的项目，
+  (3) 批量处理多个 GitHub 项目并归档同步。自动分类为：硬件开发、一人公司、agent 开发、好用工具，或按需创建新分类。
 ---
 
 # GitHub 项目知识库整理
@@ -41,7 +41,20 @@ description: >
    - 在知识库根目录下按分类创建子目录（如 `hardware-dev/`、`agent-dev/`）。
    - 子目录名使用英文 kebab-case，便于跨平台兼容。
    - 每个项目保存为独立 Markdown 文件：`knowledge-base/<category>/<repo-name>.md`
-4. **确认结果**：告知用户文件保存的完整路径。
+4. **自动推送到远端**：
+   - 检查知识库目录是否有 `.git`，没有则执行 `git init`。
+   - 检查是否有 remote，没有则询问用户远端仓库地址（例如 `https://github.com/username/knowledge-base.git`）。
+   - 需要用户 GitHub Token 时，从当前会话记录获取或询问用户。
+   - 依次执行：`git add .` → `git commit -m "feat: add <repo-name>"` → `git push origin main`
+   - 如果 `git push` 因网络超时失败，使用 GitHub Contents API 直接上传文件作为 fallback：
+     ```bash
+     curl -s -X PUT -H "Authorization: token <TOKEN>" \
+       -H "Content-Type: application/json" \
+       -d '{"message":"feat: add <repo-name>","content":"<base64_content>"}' \
+       https://api.github.com/repos/<owner>/<repo>/contents/<category>/<repo-name>.md
+     ```
+   - 推送完成后，若 remote URL 中嵌入了 token，执行 `git remote set-url origin https://github.com/owner/repo.git` 清理 token。
+5. **确认结果**：告知用户本地保存路径 + 远端同步状态。
 
 ## 分类规则
 
@@ -97,3 +110,10 @@ summary: <一句话描述>
 - 如果 README 获取失败但主页成功，基于主页信息生成摘要，并在备注中注明"README 获取失败"。
 - 同一项目重复入库时，询问用户是覆盖还是跳过。
 - 知识库路径使用绝对路径或相对于 home 目录的路径，避免歧义。
+- **Token 安全**：推送完成后务必清理 remote URL 中的 token，避免将凭证留在 `.git/config` 中。
+- **远端仓库存在性**：自动推送前检查远端仓库是否存在，若不存在先通过 GitHub API 创建：
+  ```bash
+  curl -s -X POST -H "Authorization: token <TOKEN>" -H "Content-Type: application/json" \
+    -d '{"name":"knowledge-base","description":"个人知识库","private":false}' \
+    https://api.github.com/user/repos
+  ```
